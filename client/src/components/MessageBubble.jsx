@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://yodas-cuisine-api-91b448f69c3f.herokuapp.com';
 
 function formatTime(ts) {
   const d = new Date(ts);
   return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-function PayNowButton({ data }) {
+function KitchenIcon({ size = 14, color = '#C8A96E' }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 2v7c0 1.1.9 2 2 2h4v11" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M7 2v3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M5 2v3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M9 2v3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M17 2a5 5 0 0 1 5 5v1h-5v11" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 8h5" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PayNowButton() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -20,48 +33,160 @@ function PayNowButton({ data }) {
       const res = await axios.post(`${API_BASE}/api/payment/initialize`, { deviceId });
       window.location.href = res.data.authorizationUrl;
     } catch {
-      setError('❌ Could not initialise payment. Please try again.');
+      setError('Could not initialise payment. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="mt-3">
+    <div style={{ marginTop: '12px' }}>
       <button
         onClick={handlePay}
         disabled={loading}
-        className="w-full bg-green-600 text-white py-2 rounded-xl font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+        style={{
+          width: '100%',
+          background: '#1A1A2E',
+          color: '#C8A96E',
+          border: 'none',
+          borderRadius: '8px',
+          padding: '10px 14px',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          opacity: loading ? 0.6 : 1,
+          letterSpacing: '0.01em',
+        }}
       >
-        {loading ? 'Redirecting…' : '💳 Pay Now'}
+        {loading ? 'Redirecting...' : 'Pay Now'}
       </button>
-      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      {error && (
+        <p style={{ color: '#C0392B', fontSize: '12px', marginTop: '6px', marginBottom: 0 }}>
+          {error}
+        </p>
+      )}
     </div>
   );
+}
+
+function renderBotText(text, type) {
+  const lines = text.split('\n');
+  return lines.map((line, i) => {
+    const trimmed = line.trim();
+    const isCategoryLabel =
+      type === 'menu' &&
+      trimmed.length > 1 &&
+      /^[A-Z][A-Z\s&,'/]+$/.test(trimmed);
+
+    if (isCategoryLabel) {
+      return (
+        <span
+          key={i}
+          style={{
+            display: 'block',
+            color: '#C8A96E',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontSize: '12px',
+            fontWeight: 500,
+            marginTop: i > 0 ? '8px' : 0,
+            marginBottom: '2px',
+          }}
+        >
+          {trimmed}
+        </span>
+      );
+    }
+
+    return (
+      <span
+        key={i}
+        style={{
+          display: 'block',
+          whiteSpace: 'pre-wrap',
+          color: '#2D2D2D',
+          minHeight: line === '' ? '0.6em' : undefined,
+        }}
+      >
+        {line === '' ? '' : line}
+      </span>
+    );
+  });
 }
 
 export default function MessageBubble({ message }) {
   const isBot = message.sender === 'bot';
 
   return (
-    <div className={`flex flex-col ${isBot ? 'items-start' : 'items-end'} gap-1`}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isBot ? 'flex-start' : 'flex-end',
+        gap: '4px',
+      }}
+    >
       <div
-        className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed ${
-          isBot
-            ? 'bg-gray-100 text-gray-800 rounded-tr-2xl rounded-b-2xl'
-            : 'bg-green-600 text-white rounded-tl-2xl rounded-b-2xl'
-        }`}
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '8px',
+          maxWidth: '85%',
+        }}
       >
-        {/* whitespace-pre-wrap preserves the bot's newlines and spacing */}
-        <p className="whitespace-pre-wrap">{message.text}</p>
-
-        {/* Pay Now button — only shown on checkout summary */}
-        {isBot && message.type === 'payment' && message.data && (
-          <PayNowButton data={message.data} />
+        {/* Bot avatar — shown next to every bot message */}
+        {isBot && (
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '50%',
+              background: '#1A1A2E',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              alignSelf: 'flex-end',
+            }}
+          >
+            <KitchenIcon size={14} color="#C8A96E" />
+          </div>
         )}
+
+        {/* Message bubble */}
+        <div
+          style={{
+            background: isBot ? '#FFFFFF' : '#1A1A2E',
+            border: isBot ? '0.5px solid #E8E4DF' : 'none',
+            borderRadius: isBot ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
+            padding: '10px 14px',
+            fontSize: '13px',
+            lineHeight: '1.6',
+            color: isBot ? '#2D2D2D' : '#FFFFFF',
+          }}
+        >
+          {isBot ? (
+            renderBotText(message.text, message.type)
+          ) : (
+            <p style={{ margin: 0, whiteSpace: 'pre-wrap', color: '#FFFFFF' }}>
+              {message.text}
+            </p>
+          )}
+
+          {isBot && message.type === 'payment' && message.data && <PayNowButton />}
+        </div>
       </div>
 
-      <span className="text-xs text-gray-400 px-1">{formatTime(message.timestamp)}</span>
+      {/* Timestamp */}
+      <span
+        style={{
+          fontSize: '11px',
+          color: '#888780',
+          paddingLeft: isBot ? '36px' : '0',
+        }}
+      >
+        {formatTime(message.timestamp)}
+      </span>
     </div>
   );
 }
