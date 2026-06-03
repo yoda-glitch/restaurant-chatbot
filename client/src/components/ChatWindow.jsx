@@ -3,6 +3,7 @@ import axios from 'axios';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
+import KitchenIcon from './KitchenIcon';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://yodas-cuisine-api-91b448f69c3f.herokuapp.com';
 
@@ -17,18 +18,6 @@ function makeMessage(sender, response) {
   };
 }
 
-function KitchenIcon({ size = 20, color = '#1A1A2E' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 2v7c0 1.1.9 2 2 2h4v11" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M7 2v3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M5 2v3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M9 2v3" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M17 2a5 5 0 0 1 5 5v1h-5v11" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M17 8h5" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 const QUICK_ACTIONS_ROW1 = [
   { num: '1', label: 'Place order' },
@@ -38,10 +27,11 @@ const QUICK_ACTIONS_ROW1 = [
 
 const QUICK_ACTION_ROW2 = { num: '97', label: 'Current order' };
 
-function QuickButton({ num, label, isCancel = false, onClick }) {
+function QuickButton({ num, label, isCancel = false, onClick, isTyping = false }) {
   return (
     <button
-      onClick={() => onClick(num)}
+      onClick={() => !isTyping && onClick(num)}
+      disabled={isTyping}
       style={{
         background: '#F5F0EB',
         border: `0.5px solid ${isCancel ? '#E8E4DF' : '#C8A96E'}`,
@@ -51,7 +41,8 @@ function QuickButton({ num, label, isCancel = false, onClick }) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '5px',
-        cursor: 'pointer',
+        cursor: isTyping ? 'not-allowed' : 'pointer',
+        opacity: isTyping ? 0.5 : 1,
         width: '100%',
         outline: 'none',
       }}
@@ -212,7 +203,7 @@ export default function ChatWindow() {
             }}
           >
             {QUICK_ACTIONS_ROW1.map((action) => (
-              <QuickButton key={action.num} {...action} onClick={sendMessage} />
+              <QuickButton key={action.num} {...action} onClick={sendMessage} isTyping={isTyping} />
             ))}
           </div>
           {/* Row 2: 2-column grid, 97 in first column */}
@@ -224,10 +215,10 @@ export default function ChatWindow() {
               marginBottom: '6px',
             }}
           >
-            <QuickButton {...QUICK_ACTION_ROW2} onClick={sendMessage} />
+            <QuickButton {...QUICK_ACTION_ROW2} onClick={sendMessage} isTyping={isTyping} />
           </div>
           {/* Cancel: full width */}
-          <QuickButton num="0" label="Cancel order" isCancel onClick={sendMessage} />
+          <QuickButton num="0" label="Cancel order" isCancel onClick={sendMessage} isTyping={isTyping} />
         </div>
 
         <MessageInput onSend={sendMessage} isTyping={isTyping} />

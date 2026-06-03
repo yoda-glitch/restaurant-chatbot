@@ -73,7 +73,7 @@ export default function PaymentCallbackPage() {
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [searchParams, navigate]);
 
   if (status === 'loading') {
     return (
